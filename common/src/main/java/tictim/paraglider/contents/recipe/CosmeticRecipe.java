@@ -2,8 +2,12 @@ package tictim.paraglider.contents.recipe;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.JsonOps;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.RegistryAccess;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.GsonHelper;
@@ -103,7 +107,7 @@ public class CosmeticRecipe implements CraftingRecipe{
 	@Override @NotNull public String getGroup(){
 		return group;
 	}
-	@Override @NotNull public ResourceLocation getId(){
+	@NotNull public ResourceLocation getId(){
 		return id;
 	}
 	@Override @NotNull public RecipeSerializer<?> getSerializer(){
@@ -114,17 +118,44 @@ public class CosmeticRecipe implements CraftingRecipe{
 	}
 
 	public static class Serializer implements RecipeSerializer<CosmeticRecipe>{
-		@Override @NotNull public CosmeticRecipe fromJson(@NotNull ResourceLocation recipeId, @NotNull JsonObject json){
+
+		public static final Codec<CosmeticRecipe> CODEC = RecordCodecBuilder.create(instance ->
+				instance.group(
+						ResourceLocation.CODEC.fieldOf("id").forGetter(CosmeticRecipe::getId),
+						Codec.STRING.fieldOf("group").forGetter(r -> r.group),
+						Ingredient.CODEC.fieldOf("input").forGetter(r -> r.input),
+						Ingredient.CODEC.fieldOf("reagent").forGetter(r -> r.reagent),
+						BuiltInRegistries.ITEM.byNameCodec().fieldOf("result").forGetter(r -> r.recipeOut)
+				).apply(instance, CosmeticRecipe::new)
+		);
+
+
+		@Override
+		public Codec<CosmeticRecipe> codec () {
+			return CODEC;
+		}
+
+		@NotNull
+		public CosmeticRecipe fromJson(@NotNull ResourceLocation recipeId, @NotNull JsonObject json){
 			String group = GsonHelper.getAsString(json, "group", "");
 			ResourceLocation itemName = new ResourceLocation(GsonHelper.getAsString(json, "result"));
 			Item item = ParagliderUtils.getItem(itemName);
-			if(item==Items.AIR) throw new JsonSyntaxException("Unknown item '"+group+"'");
-			Ingredient input = Ingredient.fromJson(json.get("input"));
-			Ingredient reagent = Ingredient.fromJson(json.get("reagent"));
+			if(item == Items.AIR) throw new JsonSyntaxException("Unknown item '" + group + "'");
+
+			Ingredient input = Ingredient.CODEC.parse(JsonOps.INSTANCE, json.get("input"))
+					.result()
+					.orElseThrow(() -> new JsonSyntaxException("Failed to parse Ingredient 'input'"));
+
+			Ingredient reagent = Ingredient.CODEC.parse(JsonOps.INSTANCE, json.get("reagent"))
+					.result()
+					.orElseThrow(() -> new JsonSyntaxException("Failed to parse Ingredient 'reagent'"));
+
 			return new CosmeticRecipe(recipeId, group, input, reagent, item);
 		}
 
-		@Override @NotNull public CosmeticRecipe fromNetwork(@NotNull ResourceLocation recipeId, @NotNull FriendlyByteBuf buffer){
+		@Override
+		public @NotNull CosmeticRecipe fromNetwork(@NotNull FriendlyByteBuf buffer) {
+			ResourceLocation recipeId = buffer.readResourceLocation();
 			String group = buffer.readUtf();
 			Ingredient input = Ingredient.fromNetwork(buffer);
 			Ingredient reagent = Ingredient.fromNetwork(buffer);
@@ -132,7 +163,10 @@ public class CosmeticRecipe implements CraftingRecipe{
 			return new CosmeticRecipe(recipeId, group, input, reagent, out);
 		}
 
+
+
 		@Override public void toNetwork(@NotNull FriendlyByteBuf buffer, @NotNull CosmeticRecipe recipe){
+			buffer.writeResourceLocation(recipe.getId());
 			buffer.writeUtf(recipe.group);
 			recipe.input.toNetwork(buffer);
 			recipe.reagent.toNetwork(buffer);

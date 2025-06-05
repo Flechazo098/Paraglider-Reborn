@@ -5,6 +5,7 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.util.ExtraCodecs;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -95,15 +96,28 @@ public record BargainDialog(@NotNull @Unmodifiable List<@NotNull Dialog> initial
 			int weight,
 			@Nullable @Unmodifiable Set<@NotNull String> tagFilter,
 			@Nullable @Unmodifiable Set<@NotNull String> failReasonFilter
-	){
+	)	{
+
+		public static final Codec<Component> COMPONENT_CODEC = Codec.STRING.xmap(
+				// Deserialization: String -> Component
+				str -> {
+					MutableComponent comp = Component.Serializer.fromJsonLenient(str);
+					if (comp == null) throw new IllegalArgumentException("Failed to parse Component from JSON");
+					return comp;
+				},
+				// Serialization: Component -> String
+                Component.Serializer::toJson
+		);
+
 		public static final Codec<Dialog> CODEC = RecordCodecBuilder.create(b -> b.group(
-				ExtraCodecs.COMPONENT.fieldOf("dialog").forGetter(d -> d.text),
+				COMPONENT_CODEC.fieldOf("dialog").forGetter(d -> d.text),
 				Codec.INT.optionalFieldOf("weight", 1).forGetter(d -> d.weight),
-				Codec.STRING.listOf().optionalFieldOf("tag", List.of())
-						.forGetter(d -> d.tagFilter==null ? List.of() : List.copyOf(d.tagFilter)),
-				Codec.STRING.listOf().optionalFieldOf("reason", List.of())
-						.forGetter(d -> d.failReasonFilter==null ? List.of() : List.copyOf(d.failReasonFilter))
+				Codec.STRING.listOf().optionalFieldOf("tag", List.of()).forGetter(d -> d.tagFilter == null ? List.of() : List.copyOf(d.tagFilter)),
+				Codec.STRING.listOf().optionalFieldOf("reason", List.of()).forGetter(d -> d.failReasonFilter == null ? List.of() : List.copyOf(d.failReasonFilter))
 		).apply(b, (text, weight, tagFilter, reasonFilter) -> new Dialog(text, weight, Set.copyOf(tagFilter), Set.copyOf(reasonFilter))));
+
+
+
 
 		// utility methods below
 

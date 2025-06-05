@@ -1,0 +1,28 @@
+{
+  "type": "paraglider:statue_bargain",
+  "id": "paraglider:cosmetic/buy_stamina_vessel",
+  "group": "",
+  "bargainType": "paraglider:horned_statue",
+
+  "usesStaminaVesselFeature": true,
+  "usesHeartContainerFeature": false,
+  "userTags": [],
+
+
+  "essenceDemands": 1,
+  "staminaVesselDemands": 0,
+  "heartContainerDemands": 0,
+  "itemDemands": [
+    {
+      "ingredient": {
+        "tag": "neoforge:gems/emerald"
+      },
+      "quantity": 6
+    }
+  ],
+
+  "essenceOffers": 0,
+  "staminaVesselOffers": 1,
+  "heartContainerOffers": 0,
+  "itemOffers": []
+}

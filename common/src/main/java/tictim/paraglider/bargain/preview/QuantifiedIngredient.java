@@ -2,6 +2,10 @@ package tictim.paraglider.bargain.preview;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonSyntaxException;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.JsonOps;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.FriendlyByteBuf;
@@ -22,21 +26,36 @@ import java.util.function.Predicate;
 /**
  * Pair of an ingredient and a non-negative int.
  */
-public record QuantifiedIngredient(
-		@NotNull Ingredient ingredient,
-		@Range(from = 0, to = Integer.MAX_VALUE) int quantity
-) implements Predicate<ItemStack>, DemandPreview{
-	@NotNull public static QuantifiedIngredient read(@NotNull FriendlyByteBuf buffer){
+public record QuantifiedIngredient(@NotNull Ingredient ingredient,
+								   @Range(from = 0, to = Integer.MAX_VALUE) int quantity)
+		implements Predicate<ItemStack>, DemandPreview {
+
+	public static final Codec<QuantifiedIngredient> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+			Ingredient.CODEC.fieldOf("ingredient").forGetter(QuantifiedIngredient::ingredient),
+			Codec.INT.optionalFieldOf("quantity", 1).forGetter(QuantifiedIngredient::quantity)
+	).apply(instance, QuantifiedIngredient::new));
+
+	@NotNull
+	public static QuantifiedIngredient read(@NotNull FriendlyByteBuf buffer) {
 		return new QuantifiedIngredient(Ingredient.fromNetwork(buffer), buffer.readVarInt());
 	}
 
-	public QuantifiedIngredient(@NotNull Ingredient ingredient, int quantity){
+	public QuantifiedIngredient(@NotNull Ingredient ingredient, int quantity) {
 		this.ingredient = Objects.requireNonNull(ingredient);
 		this.quantity = Math.max(0, quantity);
 	}
-	public QuantifiedIngredient(@NotNull JsonObject obj){
-		this(Ingredient.fromJson(obj.get("ingredient")), Math.max(1, GsonHelper.getAsInt(obj, "quantity", 1)));
+
+	public QuantifiedIngredient(@NotNull JsonObject obj) {
+		this(parseIngredient(obj.get("ingredient")),
+				Math.max(1, GsonHelper.getAsInt(obj, "quantity", 1)));
 	}
+
+	private static Ingredient parseIngredient(JsonElement json) {
+		return Ingredient.CODEC.parse(JsonOps.INSTANCE, json)
+				.result()
+				.orElseThrow(() -> new JsonSyntaxException("Failed to parse Ingredient"));
+	}
+
 
 	/**
 	 * Test the ItemStack using ingredient. Does not count quantity.
@@ -62,13 +81,6 @@ public record QuantifiedIngredient(
 		if(items.length==0) return List.of();
 		ItemStack stack = items[previewIndex<0||items.length<=previewIndex ? 0 : previewIndex];
 		return Screen.getTooltipFromItem(Minecraft.getInstance(), stack);
-	}
-
-	@NotNull public JsonElement serialize(){
-		JsonObject obj = new JsonObject();
-		obj.add("ingredient", ingredient.toJson());
-		if(quantity!=1) obj.addProperty("quantity", quantity);
-		return obj;
 	}
 
 	public void write(@NotNull FriendlyByteBuf buffer){

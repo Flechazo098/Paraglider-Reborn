@@ -1,5 +1,5 @@
 plugins {
-    id "com.github.johnrengelman.shadow" version "7.1.2"
+    id "com.github.johnrengelman.shadow"
 }
 
 architectury {
@@ -38,12 +38,6 @@ loom {
             property("fabric-api.datagen.output-dir", generatedResources.absolutePath)
             property("fabric-api.datagen.strict-validation")
 
-            mods {
-                paraglider {
-                    sourceSet sourceSets.main
-                    sourceSet sourceSets.dataGen
-                }
-            }
         }
     }
 }
@@ -80,19 +74,18 @@ shadowJar {
     exclude "paraglider.fabric.accesswidener"
 
     configurations = [project.configurations.shadowCommon]
-    classifier "dev-shadow"
+    archiveClassifier.set("dev-shadow")
 }
 
 remapJar {
     injectAccessWidener = true
     input.set shadowJar.archiveFile
     dependsOn shadowJar
-    baseName "Paraglider-fabric"
-    classifier null
+    archiveClassifier.set("fabric")
 }
 
 jar {
-    classifier "dev"
+    archiveClassifier.set("dev")
 }
 
 sourcesJar {

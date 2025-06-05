@@ -1,23 +1,24 @@
 package tictim.paraglider.config;
 
-import net.minecraftforge.common.ForgeConfigSpec;
+
+import net.neoforged.neoforge.common.ModConfigSpec;
 
 public class CommonConfig implements FeatureCfg, DebugCfg{
-	protected final ForgeConfigSpec spec;
+	protected final ModConfigSpec spec;
 
-	private final ForgeConfigSpec.BooleanValue enableSpiritOrbGens;
-	private final ForgeConfigSpec.BooleanValue enableHeartContainers;
-	private final ForgeConfigSpec.BooleanValue enableStaminaVessels;
-	private final ForgeConfigSpec.BooleanValue enableStructures;
+	private final ModConfigSpec.BooleanValue enableSpiritOrbGens;
+	private final ModConfigSpec.BooleanValue enableHeartContainers;
+	private final ModConfigSpec.BooleanValue enableStaminaVessels;
+	private final ModConfigSpec.BooleanValue enableStructures;
 
-	private final ForgeConfigSpec.BooleanValue debugPlayerMovement;
-	private final ForgeConfigSpec.BooleanValue traceMovementPacket;
-	private final ForgeConfigSpec.BooleanValue traceVesselPacket;
-	private final ForgeConfigSpec.BooleanValue traceBargainPacket;
-	private final ForgeConfigSpec.BooleanValue traceWindPacket;
+	private final ModConfigSpec.BooleanValue debugPlayerMovement;
+	private final ModConfigSpec.BooleanValue traceMovementPacket;
+	private final ModConfigSpec.BooleanValue traceVesselPacket;
+	private final ModConfigSpec.BooleanValue traceBargainPacket;
+	private final ModConfigSpec.BooleanValue traceWindPacket;
 
 	public CommonConfig(){
-		ForgeConfigSpec.Builder common = new ForgeConfigSpec.Builder();
+		ModConfigSpec.Builder common = new ModConfigSpec.Builder();
 		common.comment("""
 						Easy to access switches to toggle side features on and off.
 						Most of them requires server restart or datapack reload. All of them, actually.""")

@@ -21,7 +21,6 @@ import tictim.paraglider.plugin.ParagliderPluginLoader;
 
 public abstract class ParagliderMod{
 	public static final Logger LOGGER = LogManager.getLogger("Paraglider");
-
 	private static ParagliderMod instance;
 
 	@NotNull public static ParagliderMod instance(){

@@ -17,11 +17,12 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.item.crafting.RecipeManager;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import tictim.paraglider.ParagliderUtils;
+import tictim.paraglider.api.ParagliderAPI;
 import tictim.paraglider.api.bargain.Bargain;
 import tictim.paraglider.api.bargain.DemandPreview;
 import tictim.paraglider.api.bargain.OfferPreview;
@@ -38,7 +39,7 @@ import static tictim.paraglider.ParagliderUtils.ms;
 import static tictim.paraglider.client.render.StaminaWheelConstants.WHEEL_RADIUS;
 
 public class BargainScreen extends Screen implements DisableStaminaRender{
-	private static final ResourceLocation MERCHANT_GUI_TEXTURE = new ResourceLocation("textures/gui/container/villager2.png");
+	private static final ResourceLocation MERCHANT_GUI_TEXTURE = new ResourceLocation(ParagliderAPI.MODID, "textures/gui/container/villager2.png");
 	private static final long ITEM_CYCLE_TIME = 1000;
 	private static final long DIALOG_FADEOUT_START = 1750;
 	private static final long DIALOG_FADEOUT_END = 2000;
@@ -95,13 +96,16 @@ public class BargainScreen extends Screen implements DisableStaminaRender{
 				.toList();
 	}
 
-	@Nullable private static Bargain getBargain(ResourceLocation id){
+	@Nullable
+	private static Bargain getBargain(ResourceLocation id) {
 		Minecraft mc = Minecraft.getInstance();
-		if(mc.level==null) return null;
-		RecipeManager recipeManager = mc.level.getRecipeManager();
-		var optionalRecipe = recipeManager.byKey(id);
-		return optionalRecipe.isPresent()&&optionalRecipe.get() instanceof Bargain b ? b : null;
+		if (mc.level == null) return null;
+
+		return (Bargain) mc.level.getRecipeManager().byKey(id)
+                .map(RecipeHolder::value)
+                .filter(recipe -> recipe instanceof Bargain).orElse(null);
 	}
+
 
 	public void setLookAt(@Nullable Vec3 lookAt){
 		this.lookAt = lookAt;
@@ -148,7 +152,7 @@ public class BargainScreen extends Screen implements DisableStaminaRender{
 
 	@Override
 	public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks){
-		this.renderBackground(guiGraphics);
+		this.renderBackground(guiGraphics, mouseX, mouseY, partialTicks);
 
 		long newTimestamp = ms();
 		if(hasShiftDown())
@@ -198,7 +202,8 @@ public class BargainScreen extends Screen implements DisableStaminaRender{
 		}
 	}
 
-	@Override public void renderBackground(GuiGraphics guiGraphics){
+	@Override
+	public void renderBackground(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
 		//noinspection ConstantConditions
 		if(this.minecraft.level!=null){
 			guiGraphics.fillGradient(0, 0, this.width, this.height, 0x70101010, 0xa0101010);
@@ -293,13 +298,14 @@ public class BargainScreen extends Screen implements DisableStaminaRender{
 		return (float)Mth.lerp(percentage, start<end ? (end-start>180 ? start+360 : start) : (start-end>180 ? start-360 : start), end);
 	}
 
-	@Override public boolean mouseScrolled(double mouseX, double mouseY, double delta){
+	@Override public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
 		int bargainSize = this.catalog.size();
-		if(bargainSize>7){
-			this.buttonIndexOffset = Mth.clamp((int)((double)this.buttonIndexOffset-delta), 0, bargainSize-7);
+		if (bargainSize > 7) {
+			this.buttonIndexOffset = Mth.clamp(this.buttonIndexOffset - (int) scrollY, 0, bargainSize - 7);
 		}
 		return true;
 	}
+
 
 	@Override public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY){
 		if(!this.isDragging) return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);

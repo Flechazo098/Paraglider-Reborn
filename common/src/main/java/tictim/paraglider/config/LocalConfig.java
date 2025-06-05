@@ -1,7 +1,7 @@
 package tictim.paraglider.config;
 
 import com.google.common.collect.ImmutableList;
-import net.minecraftforge.common.ForgeConfigSpec;
+import net.neoforged.neoforge.common.ModConfigSpec;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -9,35 +9,35 @@ import java.util.Collections;
 import java.util.List;
 
 public class LocalConfig implements Cfg{
-	protected final ForgeConfigSpec spec;
+	protected final ModConfigSpec spec;
 
-	private final ForgeConfigSpec.BooleanValue ascendingWinds;
-	private final ForgeConfigSpec.ConfigValue<List<? extends String>> windSources;
+	private final ModConfigSpec.BooleanValue ascendingWinds;
+	private final ModConfigSpec.ConfigValue<List<? extends String>> windSources;
 	@Nullable private BlockMatcher windSourcesParsed = null;
 
-	private final ForgeConfigSpec.DoubleValue paraglidingSpeed;
-	private final ForgeConfigSpec.IntValue paragliderDurability;
+	private final ModConfigSpec.DoubleValue paraglidingSpeed;
+	private final ModConfigSpec.IntValue paragliderDurability;
 
-	private final ForgeConfigSpec.BooleanValue enderDragonDropsVessel;
-	private final ForgeConfigSpec.BooleanValue witherDropsVessel;
-	private final ForgeConfigSpec.BooleanValue raidGivesVessel;
-	private final ForgeConfigSpec.IntValue spawnerSpiritOrbDrops;
-	private final ForgeConfigSpec.BooleanValue spiritOrbLoots;
+	private final ModConfigSpec.BooleanValue enderDragonDropsVessel;
+	private final ModConfigSpec.BooleanValue witherDropsVessel;
+	private final ModConfigSpec.BooleanValue raidGivesVessel;
+	private final ModConfigSpec.IntValue spawnerSpiritOrbDrops;
+	private final ModConfigSpec.BooleanValue spiritOrbLoots;
 
-	private final ForgeConfigSpec.IntValue startingHearts;
-	private final ForgeConfigSpec.IntValue maxHeartContainers;
+	private final ModConfigSpec.IntValue startingHearts;
+	private final ModConfigSpec.IntValue maxHeartContainers;
 
-	private final ForgeConfigSpec.IntValue maxStamina;
-	private final ForgeConfigSpec.IntValue startingStamina;
-	private final ForgeConfigSpec.IntValue maxStaminaVessels;
+	private final ModConfigSpec.IntValue maxStamina;
+	private final ModConfigSpec.IntValue startingStamina;
+	private final ModConfigSpec.IntValue maxStaminaVessels;
 
-	private final ForgeConfigSpec.BooleanValue paraglidingConsumesStamina;
-	private final ForgeConfigSpec.BooleanValue runningConsumesStamina;
+	private final ModConfigSpec.BooleanValue paraglidingConsumesStamina;
+	private final ModConfigSpec.BooleanValue runningConsumesStamina;
 
-	private final ForgeConfigSpec.EnumValue<TotwCompatConfigOption> paragliderInTowersOfTheWild;
+	private final ModConfigSpec.EnumValue<TotwCompatConfigOption> paragliderInTowersOfTheWild;
 
 	public LocalConfig(){
-		ForgeConfigSpec.Builder b = new ForgeConfigSpec.Builder();
+		ModConfigSpec.Builder b = new ModConfigSpec.Builder();
 		ascendingWinds = b.comment("Fire will float you upward.").define("ascendingWinds", true);
 		windSources = b.comment("""
 						You can customize which block produces wind.
@@ -162,7 +162,7 @@ public class LocalConfig implements Cfg{
 		return get(spec, paragliderInTowersOfTheWild);
 	}
 
-	@NotNull private static <T> T get(@NotNull ForgeConfigSpec spec, @NotNull ForgeConfigSpec.ConfigValue<T> val){
+	@NotNull private static <T> T get(@NotNull ModConfigSpec spec, @NotNull ModConfigSpec.ConfigValue<T> val){
 		return spec.isLoaded() ? val.get() : val.getDefault();
 	}
 

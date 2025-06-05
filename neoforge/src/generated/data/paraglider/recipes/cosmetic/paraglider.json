@@ -1,0 +1,12 @@
+{
+  "type": "paraglider:cosmetic",
+  "id": "paraglider:cosmetic/paraglider",
+  "group": "",
+  "input": {
+    "tag": "paraglider:paragliders"
+  },
+  "reagent": {
+    "tag": "neoforge:rods/wooden"
+  },
+  "result": "paraglider:paraglider"
+}

@@ -1,14 +1,20 @@
 package datagen.builder;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
-import net.minecraft.data.recipes.FinishedRecipe;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
+import net.minecraft.core.RegistryAccess;
+import net.minecraft.data.recipes.RecipeOutput;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
+import net.minecraft.world.Container;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
+import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeSerializer;
+import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.ItemLike;
+import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import tictim.paraglider.bargain.preview.QuantifiedIngredient;
@@ -84,8 +90,8 @@ public class StatueBargainBuilder{
 		return this;
 	}
 
-	public void build(Consumer<FinishedRecipe> consumerIn, ResourceLocation id){
-		consumerIn.accept(new Result(id,
+	public void build(RecipeOutput output, ResourceLocation id){
+		output.accept(id, new BargainRecipe(id,
 				bargainType,
 				itemDemands,
 				heartContainerDemands,
@@ -95,10 +101,11 @@ public class StatueBargainBuilder{
 				heartContainerOffers,
 				staminaVesselOffers,
 				essenceOffers,
-				featureFlags));
+				featureFlags),
+				null);
 	}
 
-	public static class Result implements FinishedRecipe{
+	public static class BargainRecipe implements Recipe<Container> {
 		protected final ResourceLocation id;
 		protected final ResourceLocation bargainType;
 
@@ -114,7 +121,7 @@ public class StatueBargainBuilder{
 
 		protected final boolean disableFlags;
 
-		public Result(@NotNull ResourceLocation id,
+		public BargainRecipe(@NotNull ResourceLocation id,
 		              @NotNull ResourceLocation bargainType,
 		              @NotNull List<QuantifiedIngredient> itemDemands,
 		              int heartContainerDemands,
@@ -138,42 +145,76 @@ public class StatueBargainBuilder{
 			this.disableFlags = disableFlags;
 		}
 
-		@Override public void serializeRecipeData(@NotNull JsonObject json){
-			json.addProperty("bargainType", bargainType.toString());
-			if(!itemDemands.isEmpty()||heartContainerDemands>0||staminaVesselDemands>0||essenceDemands>0){
-				JsonObject demands = new JsonObject();
-				if(!itemDemands.isEmpty())
-					demands.add("items", itemDemands.stream().collect(JsonArray::new, (e, i) -> e.add(i.serialize()), (e1, e2) -> {}));
-				if(heartContainerDemands>0) demands.addProperty("heartContainers", heartContainerDemands);
-				if(staminaVesselDemands>0) demands.addProperty("staminaVessels", staminaVesselDemands);
-				if(essenceDemands>0) demands.addProperty("essences", essenceDemands);
-				json.add("demands", demands);
-			}
-			if(!itemOffers.isEmpty()||heartContainerOffers>0||staminaVesselOffers>0||essenceOffers>0){
-				JsonObject offers = new JsonObject();
-				if(!itemOffers.isEmpty())
-					offers.add("items", itemOffers.stream().collect(JsonArray::new, (e, i) -> e.add(i.serialize()), (e1, e2) -> {}));
-				if(heartContainerOffers>0) offers.addProperty("heartContainers", heartContainerOffers);
-				if(staminaVesselOffers>0) offers.addProperty("staminaVessels", staminaVesselOffers);
-				if(essenceOffers>0) offers.addProperty("essences", essenceOffers);
-				json.add("offers", offers);
-			}
-			if(!this.disableFlags){
-				if(heartContainerDemands>0||heartContainerOffers>0) json.addProperty("usesHeartContainerFeature", true);
-				if(staminaVesselDemands>0||staminaVesselOffers>0) json.addProperty("usesStaminaVesselFeature", true);
-			}
+		public static final Codec<BargainRecipe> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+				ResourceLocation.CODEC.fieldOf("id").forGetter(r -> r.id),
+				ResourceLocation.CODEC.fieldOf("bargainType").forGetter(r -> r.bargainType),
+				Demands.CODEC.fieldOf("demands").forGetter(r -> new Demands(r.itemDemands, r.heartContainerDemands, r.staminaVesselDemands, r.essenceDemands)),
+				Offers.CODEC.fieldOf("offers").forGetter(r -> new Offers(r.itemOffers, r.heartContainerOffers, r.staminaVesselOffers, r.essenceOffers)),
+				Codec.BOOL.optionalFieldOf("disableFlags", false).forGetter(r -> r.disableFlags)
+		).apply(instance, (id, type, demands, offers, flags) -> new BargainRecipe(
+				id, type,
+				demands.items(), demands.heart(), demands.stamina(), demands.essence(),
+				offers.items(), offers.heart(), offers.stamina(), offers.essence(),
+				flags
+		)));
+
+
+		public record Demands(
+				List<QuantifiedIngredient> items,
+				int heart,
+				int stamina,
+				int essence
+		) {
+			public static final Codec<Demands> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+					Codec.list(QuantifiedIngredient.CODEC).optionalFieldOf("items", List.of()).forGetter(Demands::items),
+					Codec.INT.optionalFieldOf("heartContainers", 0).forGetter(Demands::heart),
+					Codec.INT.optionalFieldOf("staminaVessels", 0).forGetter(Demands::stamina),
+					Codec.INT.optionalFieldOf("essences", 0).forGetter(Demands::essence)
+			).apply(instance, Demands::new));
 		}
-		@Override @NotNull public ResourceLocation getId(){
-			return id;
+
+		public record Offers(
+				List<QuantifiedItem> items,
+				int heart,
+				int stamina,
+				int essence
+		) {
+			public static final Codec<Offers> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+					Codec.list(QuantifiedItem.CODEC).optionalFieldOf("items", List.of()).forGetter(Offers::items),
+					Codec.INT.optionalFieldOf("heartContainers", 0).forGetter(Offers::heart),
+					Codec.INT.optionalFieldOf("staminaVessels", 0).forGetter(Offers::stamina),
+					Codec.INT.optionalFieldOf("essences", 0).forGetter(Offers::essence)
+			).apply(instance, Offers::new));
 		}
-		@Override @NotNull public RecipeSerializer<?> getType(){
+
+		@Override
+		public boolean matches (@NotNull Container craftingInput, @NotNull Level level) {
+			return false; // Not a real crafting recipe
+		}
+
+		@Override
+		public @NotNull ItemStack assemble (@NotNull Container craftingInput, @NotNull RegistryAccess registryAccess) {
+			return ItemStack.EMPTY; // Not a real crafting recipe
+		}
+
+		@Override
+		public boolean canCraftInDimensions (int width, int height) {
+			return false; // Not a real crafting recipe
+		}
+
+		@Override
+		public @NotNull ItemStack getResultItem (@NotNull RegistryAccess registryAccess) {
+			return ItemStack.EMPTY; // Bargains don't have traditional result items
+		}
+
+		@Override
+		public @NotNull RecipeSerializer<?> getSerializer () {
 			return Contents.get().bargainRecipeSerializer();
 		}
-		@Override @Nullable public JsonObject serializeAdvancement(){
-			return null;
-		}
-		@Override @Nullable public ResourceLocation getAdvancementId(){
-			return null;
+
+		@Override
+		public RecipeType<?> getType () {
+			return Contents.get().bargainRecipeType();
 		}
 	}
 }

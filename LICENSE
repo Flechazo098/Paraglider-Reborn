@@ -672,3 +672,222 @@ may consider it more useful to permit linking proprietary applications with
 the library.  If this is what you want to do, use the GNU Lesser General
 Public License instead of this License.  But first, please read
 <https://www.gnu.org/licenses/why-not-lgpl.html>.
+
+
+package tictim.paraglider.forge.contents;
+
+import com.mojang.serialization.Codec;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.entity.ai.attributes.Attribute;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.CreativeModeTab;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.RecipeSerializer;
+import net.minecraft.world.item.crafting.RecipeType;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.levelgen.structure.Structure;
+import net.minecraft.world.level.levelgen.structure.StructureType;
+import net.minecraft.world.level.levelgen.structure.pieces.StructurePieceType;
+import net.minecraft.world.level.storage.loot.predicates.LootItemConditionType;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.neoforge.common.loot.IGlobalLootModifier;
+import net.neoforged.neoforge.registries.DeferredHolder;
+import net.neoforged.neoforge.registries.DeferredRegister;
+import net.neoforged.neoforge.registries.NeoForgeRegistries;
+import org.jetbrains.annotations.NotNull;
+import tictim.paraglider.api.ParagliderAPI;
+import tictim.paraglider.api.bargain.Bargain;
+import tictim.paraglider.contents.Contents;
+import tictim.paraglider.contents.block.GoddessStatueBlock;
+import tictim.paraglider.contents.block.HornedStatueBlock;
+import tictim.paraglider.contents.item.AntiVesselItem;
+import tictim.paraglider.contents.item.EssenceItem;
+import tictim.paraglider.contents.item.HeartContainerItem;
+import tictim.paraglider.contents.item.ParagliderItem;
+import tictim.paraglider.contents.item.SpiritOrbItem;
+import tictim.paraglider.contents.item.StaminaVesselItem;
+import tictim.paraglider.contents.recipe.CosmeticRecipe;
+import tictim.paraglider.contents.recipe.SimpleBargainSerializer;
+import tictim.paraglider.contents.worldgen.NetherHornedStatue;
+import tictim.paraglider.contents.worldgen.TarreyTownGoddessStatue;
+import tictim.paraglider.contents.worldgen.UndergroundHornedStatue;
+import tictim.paraglider.forge.contents.item.ForgeParagliderItem;
+import tictim.paraglider.forge.contents.loot.LootConditions;
+import tictim.paraglider.forge.contents.loot.ParagliderLoot;
+import tictim.paraglider.forge.contents.loot.SpawnerSpiritOrbLoot;
+import tictim.paraglider.forge.contents.loot.SpiritOrbLoot;
+import tictim.paraglider.forge.contents.loot.VesselLoot;
+
+import static tictim.paraglider.api.ParagliderAPI.MODID;
+import static tictim.paraglider.contents.CommonContents.*;
+
+@SuppressWarnings("unused")
+public final class ForgeContents implements Contents{
+	private final DeferredRegister<Block> BLOCKS = DeferredRegister.create(BuiltInRegistries.BLOCK, MODID);
+	private final DeferredRegister<Item> ITEMS = DeferredRegister.create(BuiltInRegistries.ITEM, MODID);
+	private final DeferredRegister<RecipeSerializer<?>> RECIPE_SERIALIZERS = DeferredRegister.create(BuiltInRegistries.RECIPE_SERIALIZER, MODID);
+	private final DeferredRegister<RecipeType<?>> RECIPE_TYPES = DeferredRegister.create(BuiltInRegistries.RECIPE_TYPE, MODID);
+	private final DeferredRegister<Attribute> ATTRIBUTES = DeferredRegister.create(BuiltInRegistries.ATTRIBUTE, MODID);
+	private final DeferredRegister<Codec<? extends IGlobalLootModifier>> LOOTS = DeferredRegister.create(NeoForgeRegistries.Keys.GLOBAL_LOOT_MODIFIER_SERIALIZERS, MODID);
+	private final DeferredRegister<LootItemConditionType> LOOT_CONDITIONS = DeferredRegister.create(Registries.LOOT_CONDITION_TYPE, MODID);
+	private final DeferredRegister<StructureType<?>> STRUCTURE_TYPES = DeferredRegister.create(Registries.STRUCTURE_TYPE, MODID);
+	private final DeferredRegister<StructurePieceType> PIECES = DeferredRegister.create(Registries.STRUCTURE_PIECE, MODID);
+	private final DeferredRegister<CreativeModeTab> CREATIVE_MODE_TABS  = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, MODID);
+
+	private final DeferredHolder<Block, GoddessStatueBlock> GODDESS_STATUE = BLOCKS.register("goddess_statue",
+			() -> new GoddessStatueBlock(statueBlock()));
+	private final DeferredHolder<Block, GoddessStatueBlock> KAKARIKO_GODDESS_STATUE = BLOCKS.register("kakariko_goddess_statue",
+			() -> new GoddessStatueBlock(statueBlock(), kakarikoStatueTooltip()));
+	private final DeferredHolder<Block, GoddessStatueBlock> GORON_GODDESS_STATUE = BLOCKS.register("goron_goddess_statue",
+			() -> new GoddessStatueBlock(statueBlock().lightLevel(value -> 15), goronStatueTooltip()));
+	private final DeferredHolder<Block, GoddessStatueBlock> RITO_GODDESS_STATUE = BLOCKS.register("rito_goddess_statue",
+			() -> new GoddessStatueBlock(statueBlock(), ritoStatueTooltip()));
+	private final DeferredHolder<Block, HornedStatueBlock> HORNED_STATUE = BLOCKS.register("horned_statue",
+			() -> new HornedStatueBlock(statueBlock()));
+
+	private final DeferredHolder<Item, ForgeParagliderItem> PARAGLIDER  = ITEMS.register("paraglider", () -> new ForgeParagliderItem(PARAGLIDER_DEFAULT_COLOR));
+	private final DeferredHolder<Item, ForgeParagliderItem> DEKU_LEAF = ITEMS.register("deku_leaf", () -> new ForgeParagliderItem(DEKU_LEAF_DEFAULT_COLOR));
+	private final DeferredHolder<Item, HeartContainerItem> HEART_CONTAINER = ITEMS.register("heart_container", () -> new HeartContainerItem(rareItem()));
+	private final DeferredHolder<Item, StaminaVesselItem> STAMINA_VESSEL = ITEMS.register("stamina_vessel", () -> new StaminaVesselItem(rareItem()));
+	private final DeferredHolder<Item, SpiritOrbItem> SPIRIT_ORB = ITEMS.register("spirit_orb", () -> new SpiritOrbItem(uncommonItem()));
+	private final DeferredHolder<Item, AntiVesselItem> ANTI_VESSEL = ITEMS.register("anti_vessel", () -> new AntiVesselItem(epicItem()));
+	private final DeferredHolder<Item, EssenceItem> ESSENCE = ITEMS.register("essence", () -> new EssenceItem(rareItem()));
+	private final DeferredHolder<BlockItem> GODDESS_STATUE_ITEM = ITEMS.register("goddess_statue", () -> new BlockItem(GODDESS_STATUE.get(), rareItem()));
+	private final DeferredHolder<BlockItem> KAKARIKO_GODDESS_STATUE_IETM = ITEMS.register("kakariko_goddess_statue", () -> new BlockItem(KAKARIKO_GODDESS_STATUE.get(), rareItem()));
+	private final DeferredHolder<BlockItem> GORON_GODDESS_STATUE_ITEM = ITEMS.register("goron_goddess_statue", () -> new BlockItem(GORON_GODDESS_STATUE.get(), rareItem()));
+	private final DeferredHolder<BlockItem> RITO_GODDESS_STATUE_ITEM = ITEMS.register("rito_goddess_statue", () -> new BlockItem(RITO_GODDESS_STATUE.get(), rareItem()));
+	private final DeferredHolder<BlockItem> HORNED_STATUE_ITEM = ITEMS.register("horned_statue", () -> new BlockItem(HORNED_STATUE.get(), epicItem()));
+
+	private final DeferredHolder<CosmeticRecipe.Serializer> cosmeticRecipe = RECIPE_SERIALIZERS.register("cosmetic", CosmeticRecipe.Serializer::new);
+	private final DeferredHolder<SimpleBargainSerializer.Simple> bargainRecipe = RECIPE_SERIALIZERS.register("statue_bargain", SimpleBargainSerializer.Simple::new);
+
+	private final DeferredHolder<RecipeType<Bargain>> bargainRecipeType = RECIPE_TYPES.register("bargain",
+			() -> RecipeType.simple(ParagliderAPI.id("bargain")));
+
+	private final DeferredHolder<Codec<ParagliderLoot>> paragliderLoot = LOOTS.register("paraglider", () -> ParagliderLoot.CODEC);
+	private final DeferredHolder<Codec<SpiritOrbLoot>> spiritOrbLoot = LOOTS.register("spirit_orb", () -> SpiritOrbLoot.CODEC);
+	private final DeferredHolder<Codec<VesselLoot>> vesselLoot = LOOTS.register("vessel", () -> VesselLoot.CODEC);
+	private final DeferredHolder<Codec<SpawnerSpiritOrbLoot>> spawnerSpiritOrbLoot = LOOTS.register("spawner_spirit_orb", () -> SpawnerSpiritOrbLoot.CODEC);
+
+	public final DeferredHolder<LootItemConditionType> witherDropsVesselConfigCondition = LOOT_CONDITIONS.register("config_wither_drops_vessel",
+			() -> new LootItemConditionType(LootConditions.WITHER_DROPS_VESSEL));
+	public final DeferredHolder<LootItemConditionType> spiritOrbLootsConfigCondition = LOOT_CONDITIONS.register("config_spirit_orb_loots",
+			() -> new LootItemConditionType(LootConditions.SPIRIT_ORB_LOOTS));
+
+	private final DeferredHolder<StructureType<TarreyTownGoddessStatue>> tarreyTownGoddessStatue = structureType("tarrey_town_goddess_statue", TarreyTownGoddessStatue.CODEC);
+	private final DeferredHolder<StructureType<NetherHornedStatue>> netherHornedStatue = structureType("nether_horned_statue", NetherHornedStatue.CODEC);
+	private final DeferredHolder<StructureType<UndergroundHornedStatue>> undergroundHornedStatue = structureType("underground_horned_statue", UndergroundHornedStatue.CODEC);
+
+	private <T extends Structure> DeferredHolder<StructureType<T>> structureType(String id, Codec<T> codec){
+		return STRUCTURE_TYPES.register(id, () -> () -> codec);
+	}
+
+	private final DeferredHolder<StructurePieceType> tarreyTownGoddessStatuePiece = PIECES.register("tarrey_town_goddess_statue", TarreyTownGoddessStatue::pieceType);
+	private final DeferredHolder<StructurePieceType> netherHornedStatuePiece = PIECES.register("nether_horned_statue", NetherHornedStatue::pieceType);
+	private final DeferredHolder<StructurePieceType> undergroundHornedStatuePiece = PIECES.register("underground_horned_statue", UndergroundHornedStatue::pieceType);
+
+	private final DeferredHolder<CreativeModeTab> tab = CREATIVE_MODE_TABS .register(MODID, () -> CreativeModeTab.builder()
+			.icon(() -> new ItemStack(paraglider.get()))
+			.title(Component.translatable("itemGroup."+MODID))
+			.displayItems((features, out) -> {
+				out.accept(paraglider.get());
+				out.accept(dekuLeaf.get());
+				out.accept(heartContainer.get());
+				out.accept(staminaVessel.get());
+				out.accept(spiritOrb.get());
+				out.accept(antiVessel.get());
+				out.accept(essence.get());
+				out.accept(goddessStatue.get());
+				out.accept(kakarikoGoddessStatue.get());
+				out.accept(goronGoddessStatue.get());
+				out.accept(ritoGoddessStatue.get());
+				out.accept(hornedStatue.get());
+			}).build());
+
+
+	@NotNull public DeferredRegister<Block> blocks(){
+		return BLOCKS;
+	}
+
+	@Override @NotNull public ParagliderItem paraglider(){
+		return paraglider.get();
+	}
+	@Override @NotNull public ParagliderItem dekuLeaf(){
+		return dekuLeaf.get();
+	}
+	@Override @NotNull public Item heartContainer(){
+		return heartContainer.get();
+	}
+	@Override @NotNull public Item staminaVessel(){
+		return staminaVessel.get();
+	}
+	@Override @NotNull public Item spiritOrb(){
+		return spiritOrb.get();
+	}
+	@Override @NotNull public Item antiVessel(){
+		return antiVessel.get();
+	}
+	@Override @NotNull public Item essence(){
+		return essence.get();
+	}
+	@Override @NotNull public Block goddessStatue(){
+		return goddessStatue.get();
+	}
+	@Override @NotNull public Block kakarikoGoddessStatue(){
+		return kakarikoGoddessStatue.get();
+	}
+	@Override @NotNull public Block goronGoddessStatue(){
+		return goronGoddessStatue.get();
+	}
+	@Override @NotNull public Block ritoGoddessStatue(){
+		return ritoGoddessStatue.get();
+	}
+	@Override @NotNull public Block hornedStatue(){
+		return hornedStatue.get();
+	}
+	@Override @NotNull public BlockItem goddessStatueItem(){
+		return goddessStatueItem.get();
+	}
+	@Override @NotNull public BlockItem kakarikoGoddessStatueItem(){
+		return kakarikoGoddessStatueItem.get();
+	}
+	@Override @NotNull public BlockItem goronGoddessStatueItem(){
+		return goronGoddessStatueItem.get();
+	}
+	@Override @NotNull public BlockItem ritoGoddessStatueItem(){
+		return ritoGoddessStatueItem.get();
+	}
+	@Override @NotNull public BlockItem hornedStatueItem(){
+		return hornedStatueItem.get();
+	}
+	@Override @NotNull public CosmeticRecipe.Serializer cosmeticRecipeSerializer(){
+		return cosmeticRecipe.get();
+	}
+	@Override @NotNull public RecipeSerializer<? extends Bargain> bargainRecipeSerializer(){
+		return bargainRecipe.get();
+	}
+	@Override @NotNull public RecipeType<Bargain> bargainRecipeType(){
+		return bargainRecipeType.get();
+	}
+	@Override @NotNull public StructureType<TarreyTownGoddessStatue> tarreyTownGoddessStatue(){
+		return tarreyTownGoddessStatue.get();
+	}
+	@Override @NotNull public StructureType<NetherHornedStatue> netherHornedStatue(){
+		return netherHornedStatue.get();
+	}
+	@Override @NotNull public StructureType<UndergroundHornedStatue> undergroundHornedStatue(){
+		return undergroundHornedStatue.get();
+	}
+	@Override @NotNull public StructurePieceType tarreyTownGoddessStatuePiece(){
+		return tarreyTownGoddessStatuePiece.get();
+	}
+	@Override @NotNull public StructurePieceType netherHornedStatuePiece(){
+		return netherHornedStatuePiece.get();
+	}
+	@Override @NotNull public StructurePieceType undergroundHornedStatuePiece(){
+		return undergroundHornedStatuePiece.get();
+	}
+}

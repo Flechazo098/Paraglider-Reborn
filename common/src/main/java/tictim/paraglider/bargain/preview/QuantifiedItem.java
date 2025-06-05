@@ -1,16 +1,20 @@
 package tictim.paraglider.bargain.preview;
 
 import com.google.gson.JsonObject;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
-import net.minecraft.util.GsonHelper;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.ExtraCodecs;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.ShapedRecipe;
+import net.minecraft.world.item.Items;
 import org.jetbrains.annotations.NotNull;
 import tictim.paraglider.ParagliderUtils;
 import tictim.paraglider.api.bargain.OfferPreview;
@@ -22,28 +26,29 @@ import java.util.Objects;
  * Pair of an item and an unsigned int. Isn't it called {@link ItemStack}? Sure, but it ain't have support for
  * {@code 2^31-1} items.
  */
-public record QuantifiedItem(@NotNull ItemStack item, int quantity) implements OfferPreview{
-	@NotNull public static QuantifiedItem read(@NotNull FriendlyByteBuf buffer){
-		return new QuantifiedItem(buffer.readItem(), buffer.readVarInt());
-	}
+public record QuantifiedItem(@NotNull ItemStack item, int quantity) implements OfferPreview {
 
-	public QuantifiedItem(@NotNull Item item, int quantity){
+	public static final Codec<QuantifiedItem> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+			ResourceLocation.CODEC.fieldOf("item").forGetter(qi -> BuiltInRegistries.ITEM.getKey(qi.item().getItem())),
+			ExtraCodecs.NON_NEGATIVE_INT.optionalFieldOf("count", 1).forGetter(QuantifiedItem::quantity)
+	).apply(instance, (itemId, count) -> {
+		Item item = BuiltInRegistries.ITEM.get(itemId);
+        return new QuantifiedItem(new ItemStack(item), count);
+	}));
+
+
+	public QuantifiedItem(@NotNull Item item, int quantity) {
 		this(new ItemStack(item), Math.max(0, quantity));
 	}
 
-	public QuantifiedItem(@NotNull ItemStack item, int quantity){
+	public QuantifiedItem(@NotNull ItemStack item, int quantity) {
 		this.item = Objects.requireNonNull(item);
 		this.quantity = Math.max(0, quantity);
 	}
 
-	public QuantifiedItem(@NotNull JsonObject object){
-		this(parseItemStack(object), GsonHelper.getAsInt(object, "count", 1));
-	}
-
-	private static ItemStack parseItemStack(JsonObject object){
-		ItemStack stack = ShapedRecipe.itemStackFromJson(object);
-		stack.setCount(1);
-		return stack;
+	@NotNull
+	public static QuantifiedItem read(@NotNull FriendlyByteBuf buffer) {
+		return new QuantifiedItem(buffer.readItem(), buffer.readVarInt());
 	}
 
 	@NotNull public ItemStack getItem(){

@@ -1,0 +1,30 @@
+modLoader = "javafml"
+loaderVersion = "[2,)"
+license="GNU General Public License version 3 (GPLv3)"
+issueTrackerURL="https://github.com/Tictim/Paraglider/issues"
+logoFile="icon.png"
+
+[[mods]]
+modId="paraglider"
+version="${version}"
+displayName="Paraglider"
+displayURL="https://www.curseforge.com/minecraft/mc-mods/paragliders"
+authors="Tictim"
+description="BotW style Paraglider"
+
+[[dependencies.paraglider]]
+modId = "neoforge"
+type = "required"
+versionRange = "[0,)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.paraglider]]
+modId = "minecraft"
+type = "required"
+versionRange = "[1.20.4,1.21)"
+ordering = "NONE"
+side = "BOTH"
+
+[[mixins]]
+config = "paraglider.mixins.json"

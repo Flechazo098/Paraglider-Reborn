@@ -1,5 +1,6 @@
 package tictim.paraglider.contents.block;
 
+import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
@@ -58,6 +59,12 @@ public class GoddessStatueBlock extends HorizontalDirectionalBlock{
 	public GoddessStatueBlock(@NotNull Properties properties){
 		this(properties, null);
 	}
+
+	@Override
+	protected MapCodec<? extends HorizontalDirectionalBlock> codec () {
+		return null;
+	}
+
 	public GoddessStatueBlock(@NotNull Properties properties, @Nullable Component tooltip){
 		super(properties);
 		this.tooltip = tooltip;

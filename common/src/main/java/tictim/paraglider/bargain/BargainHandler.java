@@ -5,6 +5,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -66,8 +67,17 @@ public final class BargainHandler{
 		var bargains = player.level().getRecipeManager()
 				.getAllRecipesFor(Contents.get().bargainRecipeType())
 				.stream()
-				.filter(b -> bargainType.equals(b.getBargainType())&&b.isAvailableFor(player, pos))
-				.collect(Collectors.toMap(Bargain::getId, b -> b, (b1, b2) -> b1, Object2ObjectOpenHashMap::new));
+				.filter(holder -> {
+					Bargain b = holder.value();
+					return bargainType.equals(b.getBargainType()) && b.isAvailableFor(player, pos);
+				})
+				.collect(Collectors.toMap(
+                        RecipeHolder::id,
+						RecipeHolder::value,
+						(b1, b2) -> b1,
+						Object2ObjectOpenHashMap::new
+				));
+
 
 		if(bargains.isEmpty()) return false;
 

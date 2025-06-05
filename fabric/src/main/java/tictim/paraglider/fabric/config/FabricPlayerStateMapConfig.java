@@ -1,9 +1,9 @@
 package tictim.paraglider.fabric.config;
 
-import fuzs.forgeconfigapiport.api.config.v2.ForgeConfigRegistry;
-import fuzs.forgeconfigapiport.api.config.v2.ModConfigEvents;
+import fuzs.forgeconfigapiport.fabric.api.neoforge.v4.NeoForgeConfigRegistry;
+import fuzs.forgeconfigapiport.fabric.api.neoforge.v4.NeoForgeModConfigEvents;
 import net.minecraft.server.MinecraftServer;
-import net.minecraftforge.fml.config.ModConfig;
+import net.neoforged.fml.config.ModConfig;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import tictim.paraglider.config.PlayerStateMapConfig;
@@ -16,8 +16,8 @@ public class FabricPlayerStateMapConfig extends PlayerStateMapConfig{
 
 	public FabricPlayerStateMapConfig(@NotNull PlayerStateMap originalStateMap){
 		super(originalStateMap);
-		ForgeConfigRegistry.INSTANCE.register(MODID, ModConfig.Type.COMMON, this.spec, FILENAME);
-		ModConfigEvents.reloading(MODID).register(cfg -> {
+		NeoForgeConfigRegistry.INSTANCE.register(MODID, ModConfig.Type.COMMON, this.spec, FILENAME);
+		NeoForgeModConfigEvents.reloading(MODID).register(cfg -> {
 			if(cfg.getSpec()==this.spec) scheduleReload(server, null);
 		});
 	}

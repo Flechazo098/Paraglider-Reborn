@@ -1,16 +1,29 @@
 package tictim.paraglider.network.message;
 
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.NotNull;
+import tictim.paraglider.api.ParagliderAPI;
 
-public record BargainMsg(int sessionId, @NotNull ResourceLocation bargain) implements Msg{
+public record BargainMsg(int sessionId, @NotNull ResourceLocation bargain) implements Msg, CustomPacketPayload {
+	public static final ResourceLocation ID = new ResourceLocation(ParagliderAPI.MODID, "bargain_msg");
+
+	public BargainMsg(FriendlyByteBuf buffer) {
+		this(buffer.readVarInt(), buffer.readResourceLocation());
+	}
+
 	@NotNull public static BargainMsg read(@NotNull FriendlyByteBuf buffer){
-		return new BargainMsg(buffer.readVarInt(), buffer.readResourceLocation());
+		return new BargainMsg(buffer);
 	}
 
 	@Override public void write(@NotNull FriendlyByteBuf buffer){
 		buffer.writeVarInt(sessionId);
 		buffer.writeResourceLocation(bargain);
+	}
+
+	@Override
+	public ResourceLocation id () {
+		return ID;
 	}
 }

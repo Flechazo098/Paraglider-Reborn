@@ -1,5 +1,7 @@
 {
   "type": "paraglider:cosmetic",
+  "id": "paraglider:cosmetic/goron_goddess_statue",
+  "group": "",
   "input": {
     "tag": "paraglider:statues/goddess"
   },

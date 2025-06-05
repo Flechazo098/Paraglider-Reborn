@@ -16,33 +16,35 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-public final class PlayerStateConnectionMap{
-	private final Map<ResourceLocation, ConnectionList> connections;
-
-	public PlayerStateConnectionMap(@NotNull Map<@NotNull ResourceLocation, @NotNull ConnectionList> connections){
+public record PlayerStateConnectionMap(Map<ResourceLocation, ConnectionList> connections) {
+	public PlayerStateConnectionMap (@NotNull Map<@NotNull ResourceLocation, @NotNull ConnectionList> connections) {
 		this.connections = connections;
 	}
 
-	@NotNull @Unmodifiable public Map<@NotNull ResourceLocation, @NotNull ConnectionList> connections(){
+	@Override
+	@NotNull
+	@Unmodifiable
+	public Map<@NotNull ResourceLocation, @NotNull ConnectionList> connections () {
 		return Collections.unmodifiableMap(connections);
 	}
 
-	@NotNull public PlayerState evaluate(@NotNull PlayerStateMap stateMap,
-	                                     @NotNull Player player,
-	                                     @NotNull PlayerState prevState,
-	                                     boolean canDoParagliding,
-	                                     double accumulatedFallDistance){
+	@NotNull
+	public PlayerState evaluate (@NotNull PlayerStateMap stateMap,
+								 @NotNull Player player,
+								 @NotNull PlayerState prevState,
+								 boolean canDoParagliding,
+								 double accumulatedFallDistance) {
 		Object2IntMap<ResourceLocation> states = new Object2IntOpenHashMap<>();
 		ResourceLocation currentState = ParagliderPlayerStates.IDLE;
 		@Nullable ConnectionList currentConnections = connections.get(currentState);
 		int currentIndex = 0;
 
 		LOOP:
-		while(true){
-			if(currentConnections==null) return stateMap.expectState(currentState);
-			while(currentIndex<currentConnections.branches.size()){
+		while (true) {
+			if (currentConnections == null) return stateMap.expectState(currentState);
+			while (currentIndex < currentConnections.branches.size()) {
 				Branch c = currentConnections.branches.get(currentIndex++);
-				if(c.condition().test(player, prevState, canDoParagliding, accumulatedFallDistance)){
+				if (c.condition().test(player, prevState, canDoParagliding, accumulatedFallDistance)) {
 					states.put(currentState, currentIndex);
 					currentState = c.state();
 					currentConnections = connections.get(currentState);
@@ -51,7 +53,7 @@ public final class PlayerStateConnectionMap{
 				}
 			}
 
-			if(currentConnections.fallback==null) return stateMap.expectState(currentState);
+			if (currentConnections.fallback == null) return stateMap.expectState(currentState);
 
 			states.put(currentState, currentIndex);
 			currentState = currentConnections.fallback;
@@ -60,19 +62,20 @@ public final class PlayerStateConnectionMap{
 		}
 	}
 
-	@Override public String toString(){
-		return "PlayerStateConnectionMap{"+
-				", connections="+connections+
+	@Override
+	public String toString () {
+		return "PlayerStateConnectionMap{" +
+				", connections=" + connections +
 				'}';
 	}
 
 	public record ConnectionList(
 			@NotNull @Unmodifiable List<@NotNull Branch> branches,
 			@Nullable ResourceLocation fallback
-	){
-		public ConnectionList(@NotNull @Unmodifiable List<@NotNull Branch> branches, @Nullable ResourceLocation fallback){
+	) {
+		public ConnectionList (@NotNull @Unmodifiable List<@NotNull Branch> branches, @Nullable ResourceLocation fallback) {
 			this.branches = List.copyOf(Objects.requireNonNull(branches, "branches == null"));
-			for(Branch branch : this.branches) Objects.requireNonNull(branch);
+			for (Branch branch : this.branches) Objects.requireNonNull(branch);
 			this.fallback = fallback;
 		}
 	}
@@ -80,5 +83,6 @@ public final class PlayerStateConnectionMap{
 	public record Branch(
 			@NotNull PlayerStateCondition condition,
 			@NotNull ResourceLocation state
-	){}
+	) {
+	}
 }

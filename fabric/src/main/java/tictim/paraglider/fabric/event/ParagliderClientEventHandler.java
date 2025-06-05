@@ -44,18 +44,19 @@ public final class ParagliderClientEventHandler{
 		InGameStaminaWheelRenderer.get().renderStamina(guiGraphics, x, y, 25);
 	}
 
-	private static void renderDebugText(GuiGraphics guiGraphics){
-		if(!DebugCfg.get().debugPlayerMovement()) return;
+	private static void renderDebugText(GuiGraphics guiGraphics) {
+		if (!DebugCfg.get().debugPlayerMovement()) return;
 		Minecraft mc = Minecraft.getInstance();
-		if(mc.options.renderDebug) return; // handled by DebugScreenOverlay
+		if (mc.getDebugOverlay().showDebugScreen()) return; // handled by DebugScreenOverlay
 		Player p = mc.player;
-		if(p==null) return;
+		if (p == null) return;
 
 		List<String> list = new ArrayList<>();
 		ParagliderUtils.addDebugText(p, list);
 
 		renderLines(guiGraphics, mc.font, list);
 	}
+
 
 	// DebugScreenOverlay#renderLines
 	private static void renderLines(GuiGraphics guiGraphics, Font font, List<String> list){

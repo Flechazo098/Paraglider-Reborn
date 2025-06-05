@@ -247,7 +247,7 @@ public class SimpleBargain implements Bargain{
 		return Collections.unmodifiableSet(this.tags);
 	}
 
-	@Override @NotNull public ResourceLocation getId(){
+	 @NotNull public ResourceLocation getId(){
 		return id;
 	}
 	@Override @NotNull public RecipeSerializer<?> getSerializer(){

@@ -5,7 +5,7 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.minecraft.Util;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
-import net.minecraftforge.common.ForgeConfigSpec;
+import net.neoforged.neoforge.common.ModConfigSpec;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import tictim.paraglider.ParagliderMod;
@@ -27,7 +27,7 @@ import static tictim.paraglider.api.movement.ParagliderPlayerStates.Flags.FLAG_R
 public class PlayerStateMapConfig{
 	protected static final String FILENAME = "paraglider-player-states.toml";
 
-	protected final ForgeConfigSpec spec;
+	protected final ModConfigSpec spec;
 
 	private final PlayerStateMap originalStateMap;
 	private final Map<ResourceLocation, Config> configSpecs;
@@ -51,7 +51,7 @@ public class PlayerStateMapConfig{
 					.put(e.getKey().getPath(), e.getValue());
 		}
 
-		ForgeConfigSpec.Builder b = new ForgeConfigSpec.Builder();
+		ModConfigSpec.Builder b = new ModConfigSpec.Builder();
 		this.configSpecs = new Object2ObjectOpenHashMap<>();
 
 		for(var e : states.entrySet()){
@@ -68,8 +68,8 @@ public class PlayerStateMapConfig{
 				b.push(e2.getKey());
 				PlayerState state = e2.getValue();
 
-				ForgeConfigSpec.IntValue staminaDelta = b.defineInRange("staminaDelta", state.staminaDelta(), Integer.MIN_VALUE, Integer.MAX_VALUE);
-				ForgeConfigSpec.IntValue recoveryDelay = b.defineInRange("recoveryDelay", state.recoveryDelay(), 0, Integer.MAX_VALUE);
+				ModConfigSpec.IntValue staminaDelta = b.defineInRange("staminaDelta", state.staminaDelta(), Integer.MIN_VALUE, Integer.MAX_VALUE);
+				ModConfigSpec.IntValue recoveryDelay = b.defineInRange("recoveryDelay", state.recoveryDelay(), 0, Integer.MAX_VALUE);
 				configSpecs.put(state.id(), new Config(staminaDelta, recoveryDelay));
 
 				b.pop();
@@ -183,6 +183,6 @@ public class PlayerStateMapConfig{
 		void onFail(@NotNull PlayerStateMap stateMap, @NotNull RuntimeException exception, boolean update);
 	}
 
-	protected record Config(@NotNull ForgeConfigSpec.IntValue staminaDelta,
-	                        @NotNull ForgeConfigSpec.IntValue recoveryDelay){}
+	protected record Config(@NotNull ModConfigSpec.IntValue staminaDelta,
+	                        @NotNull ModConfigSpec.IntValue recoveryDelay){}
 }

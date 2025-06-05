@@ -1,5 +1,6 @@
 package tictim.paraglider.contents.block;
 
+import com.mojang.serialization.MapCodec;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -45,6 +46,11 @@ public class HornedStatueBlock extends HorizontalDirectionalBlock{
 
 	public HornedStatueBlock(@NotNull Properties properties){
 		super(properties);
+	}
+
+	@Override
+	protected MapCodec<? extends HorizontalDirectionalBlock> codec () {
+		return null;
 	}
 
 	@Override protected void createBlockStateDefinition(@NotNull StateDefinition.Builder<Block, BlockState> builder){

@@ -42,4 +42,18 @@ public class FabricBargain extends SimpleBargain{
 		return (!usesHeartContainerFeature||FeatureCfg.get().enableHeartContainers())&&
 				(!usesStaminaVesselFeature||FeatureCfg.get().enableStaminaVessels());
 	}
+	
+	/**
+	 * Returns whether this bargain uses heart container feature.
+	 */
+	public boolean usesHeartContainerFeature() {
+		return usesHeartContainerFeature;
+	}
+	
+	/**
+	 * Returns whether this bargain uses stamina vessel feature.
+	 */
+	public boolean usesStaminaVesselFeature() {
+		return usesStaminaVesselFeature;
+	}
 }

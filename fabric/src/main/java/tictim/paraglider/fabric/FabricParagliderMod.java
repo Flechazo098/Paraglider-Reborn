@@ -71,8 +71,8 @@ public final class FabricParagliderMod extends ParagliderMod implements ModIniti
 		this.contents.register();
 		ParagliderLoots.register();
 
-		CauldronInteraction.WATER.put(Contents.get().paraglider(), CauldronInteraction.DYED_ITEM);
-		CauldronInteraction.WATER.put(Contents.get().dekuLeaf(), CauldronInteraction.DYED_ITEM);
+		CauldronInteraction.WATER.map().put(Contents.get().paraglider(), CauldronInteraction.DYED_ITEM);
+		CauldronInteraction.WATER.map().put(Contents.get().dekuLeaf(), CauldronInteraction.DYED_ITEM);
 
 		FabricParagliderNetwork.init();
 

@@ -2,27 +2,31 @@ package tictim.paraglider.network.message;
 
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import tictim.paraglider.api.ParagliderAPI;
 import tictim.paraglider.bargain.BargainCatalog;
 import tictim.paraglider.network.NetUtils;
 
 import java.util.Map;
 
-public record BargainInitMsg(
-		int sessionId,
-		@NotNull Map<ResourceLocation, BargainCatalog> catalog,
-		@Nullable Vec3 lookAt,
-		@Nullable Component dialog
-) implements Msg{
-	@NotNull public static BargainInitMsg read(@NotNull FriendlyByteBuf buffer){
-		return new BargainInitMsg(
+public record BargainInitMsg(int sessionId, @NotNull Map<ResourceLocation, BargainCatalog> catalog, @Nullable Vec3 lookAt, @Nullable Component dialog) implements Msg, CustomPacketPayload {
+	public static final ResourceLocation ID = new ResourceLocation(ParagliderAPI.MODID, "bargain_init_msg");
+
+	public BargainInitMsg (FriendlyByteBuf buffer) {
+		this(
 				buffer.readVarInt(),
 				NetUtils.readCatalogs(buffer),
 				NetUtils.readLookAt(buffer),
-				buffer.readBoolean() ? buffer.readComponent() : null);
+				buffer.readBoolean() ? buffer.readComponent() : null
+		);
+	}
+
+	public static @NotNull BargainInitMsg read(@NotNull FriendlyByteBuf buffer) {
+		return new BargainInitMsg(buffer);
 	}
 
 	@Override public void write(@NotNull FriendlyByteBuf buffer){
@@ -31,5 +35,10 @@ public record BargainInitMsg(
 		NetUtils.writeLookAt(buffer, lookAt);
 		buffer.writeBoolean(dialog!=null);
 		if(dialog!=null) buffer.writeComponent(dialog);
+	}
+
+	@Override
+	public ResourceLocation id () {
+		return ID;
 	}
 }
